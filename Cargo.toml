@@ -1,0 +1,23 @@
+[package]
+name = "ch"
+version = "0.1.0"
+authors = ["Jihyun Yu <j.yu@naverlabs.com>"]
+
+[dependencies]
+csv = "1.0.0-beta.5"
+serde = "*"
+serde_derive = "*"
+error-chain = "*"
+ordslice = "*"
+stopwatch = "*"
+rayon = "*"
+take_mut = "*"
+fnv = "*"
+clap = "*"
+
+[profile.test]
+debug = true
+
+[profile.release]
+debug = true
+lto = true
