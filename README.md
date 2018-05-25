@@ -1,5 +1,6 @@
-## CH: Contraction Hierarchies implementation
+# CH: Contraction Hierarchies implementation
 
+[![Build Status](https://travis-ci.org/yjh0502/ch.svg?branch=master)](https://travis-ci.org/yjh0502/ch)
 
 ## Getting Started
 
