@@ -10,20 +10,20 @@ extern crate serde_derive;
 extern crate stopwatch;
 
 use std::cmp::*;
-use std::collections::hash_map::*;
-use std::path::Path;
 use std::collections::BinaryHeap;
+use std::collections::hash_map::*;
 use std::ops::Range;
+use std::path::Path;
 
 use stopwatch::Stopwatch;
 
-pub mod partition;
+mod ch;
 mod dijkstra;
 mod network;
-mod ch;
+pub mod partition;
 
-pub use network::*;
 pub use ch::*;
+pub use network::*;
 
 pub mod errors {
     error_chain! {
@@ -246,6 +246,7 @@ pub fn run_car() {
 mod tests {
     use super::*;
 
+    /*
     #[test]
     fn test_run_walk() {
         run();
@@ -255,6 +256,7 @@ mod tests {
     fn test_run_car() {
         run_car();
     }
+    */
 }
 
 // static size assertion

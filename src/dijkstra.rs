@@ -1,8 +1,8 @@
 use std;
-use std::hash::Hash;
+use std::cmp::*;
 use std::collections::BinaryHeap;
 use std::collections::hash_map::*;
-use std::cmp::*;
+use std::hash::Hash;
 
 use fnv;
 

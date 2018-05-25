@@ -1,8 +1,8 @@
 use ordslice::Ext;
 use rayon::prelude::*;
 
-use errors::*;
 use super::*;
+use errors::*;
 
 use fnv::*;
 
@@ -659,7 +659,7 @@ impl<'a> CH<'a> {
             let mut updated = false;
 
             macro_rules! step {
-                ($f: ident, $b: ident, $dir: expr) => {
+                ($f:ident, $b:ident, $dir:expr) => {
                     if let Some(entry) = self.search_step(&mut $f, $dir) {
                         updated = true;
                         if let Some(cost) = $b.get_cost(&entry.key) {
@@ -673,7 +673,7 @@ impl<'a> CH<'a> {
                             }
                         }
                     }
-                }
+                };
             };
 
             step!(search_f, search_b, IdxLinkDir::Forward);

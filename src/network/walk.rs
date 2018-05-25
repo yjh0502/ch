@@ -26,11 +26,13 @@ impl std::hash::Hash for NodeKey {
 #[derive(Deserialize, Debug)]
 pub struct Link {
     mid: u64,
-    #[serde(rename = "mesh")] mesh_id: u32,
+    #[serde(rename = "mesh")]
+    mesh_id: u32,
     link_id: u32,
     snode_id: u32,
     enode_id: u32,
-    #[serde(rename = "link_l")] length: u32,
+    #[serde(rename = "link_l")]
+    length: u32,
 }
 
 impl Link {
@@ -53,10 +55,13 @@ impl Link {
 #[derive(Deserialize, Debug, Clone)]
 pub struct Node {
     mid: u64,
-    #[serde(rename = "mesh")] mesh_id: u32,
+    #[serde(rename = "mesh")]
+    mesh_id: u32,
     node_id: u32,
-    #[serde(rename = "edge_mesh")] edge_mesh_id: u32,
-    #[serde(rename = "edge_node")] edge_node_id: u32,
+    #[serde(rename = "edge_mesh")]
+    edge_mesh_id: u32,
+    #[serde(rename = "edge_node")]
+    edge_node_id: u32,
 }
 impl Node {
     fn node_key(&self) -> NodeKey {
