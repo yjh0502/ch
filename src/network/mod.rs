@@ -2,6 +2,7 @@ use super::*;
 use rayon::prelude::*;
 
 pub mod road;
+pub mod shp;
 pub mod walk;
 
 #[derive(Clone, Copy, PartialOrd, Ord, PartialEq, Eq, Debug, Serialize, Deserialize)]

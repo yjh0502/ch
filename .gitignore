@@ -2,3 +2,4 @@ target
 *.sw[a-z]
 perf.*
 data
+link_ch*

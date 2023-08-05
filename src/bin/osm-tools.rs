@@ -1,7 +1,7 @@
 use std::fs::File;
 
-use clap::{Command, Arg};
-use failure::Error;
+use anyhow::Error;
+use clap::{Arg, Command};
 use memmap::MmapOptions;
 use osmpbf::*;
 use rayon::prelude::*;
@@ -137,11 +137,7 @@ fn par_mmap() -> Result<()> {
 fn main() {
     let args = Command::new("ch-build")
         .author("Jihyun Yu <j.yu@naverlabs.com>")
-        .arg(
-            Arg::new("filename")
-                .short('f')
-                .required(true)
-        )
+        .arg(Arg::new("filename").short('f').required(true))
         .get_matches();
 
     let filename = args.get_one::<String>("filename").unwrap();

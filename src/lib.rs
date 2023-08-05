@@ -1,12 +1,10 @@
-#[macro_use]
-extern crate error_chain;
-
+use anyhow::{Error, Result};
+use serde_derive::*;
 use std::cmp::*;
 use std::collections::hash_map::*;
 use std::collections::BinaryHeap;
 use std::ops::Range;
 use std::path::Path;
-use serde_derive::*;
 
 use took::Timer;
 
@@ -17,16 +15,6 @@ pub mod partition;
 
 pub use crate::ch::*;
 pub use network::*;
-
-pub mod errors {
-    error_chain! {
-        foreign_links {
-            De(::serde::de::value::Error);
-            Csv(::csv::Error);
-        }
-    }
-}
-use errors::*;
 
 fn decode_csv_noheader<T, P>(p: P) -> Result<Vec<T>>
 where
@@ -91,11 +79,11 @@ pub fn run() {
 
     let sw = Timer::new();
     let network = walk::Network::from_path("wlink").unwrap();
-    eprintln!("network loading took: {} ms", sw.took());
+    eprintln!("network loading took: {}", sw.took());
 
     let sw = Timer::new();
     let g = Graph::from(&network);
-    eprintln!("graph took: {} ms", sw.took());
+    eprintln!("graph took: {}", sw.took());
 
     let test_queries = [
         [_key_bangbang, _key_ilsan],
@@ -111,7 +99,7 @@ pub fn run() {
                 .search(src, dst)
                 .expect("failed to find path with dijkstra");
             eprintln!(
-                "dijkstra took: {} ms, distance={}, links={}",
+                "dijkstra took: {}, distance={}, links={}",
                 sw.took(),
                 distance,
                 _seq.len(),
@@ -122,7 +110,7 @@ pub fn run() {
                 .search_bidir(src, dst)
                 .expect("failed to find path with bi-dijkstra");
             eprintln!(
-                "dijkstra-bidir took: {} ms, distance={}, links={}",
+                "dijkstra-bidir took: {}, distance={}, links={}",
                 sw.took(),
                 distance,
                 _seq.len(),
@@ -137,7 +125,7 @@ pub fn run() {
             let mut ch = CH::new(&g);
             ch.build();
         }
-        eprintln!("loading ch took: {} ms", sw.took());
+        eprintln!("loading ch took: {}", sw.took());
 
         for query in test_queries.iter() {
             let sw = Timer::new();
@@ -145,7 +133,7 @@ pub fn run() {
             let dst = network.node_key_to_idx(query[1]);
             let (_seq, distance) = ch.search(src, dst).expect("failed to find path with ch");
             eprintln!(
-                "ch took: {} ms, distance={}, links={}",
+                "ch took: {}, distance={}, links={}",
                 sw.took(),
                 distance,
                 _seq.len(),
@@ -168,11 +156,11 @@ pub fn run_car() {
 
     let sw = Timer::new();
     let network = road::Network::from_path("link").unwrap();
-    eprintln!("network loading took: {} ms", sw.took());
+    eprintln!("network loading took: {}", sw.took());
 
     let sw = Timer::new();
     let g = Graph::from(&network);
-    eprintln!("graph took: {} ms", sw.took());
+    eprintln!("graph took: {}", sw.took());
 
     let test_queries = [
         //
@@ -191,7 +179,7 @@ pub fn run_car() {
                 .search(src, dst)
                 .expect("failed to find path with dijkstra");
             eprintln!(
-                "dijkstra took: {} ms, cost={}, links={}",
+                "dijkstra took: {}, cost={}, links={}",
                 sw.took(),
                 cost,
                 _seq.len(),
@@ -202,7 +190,7 @@ pub fn run_car() {
                 .search_bidir(src, dst)
                 .expect("failed to find path with bi-dijkstra");
             eprintln!(
-                "dijkstra-bidir took: {} ms, cost={}, links={}",
+                "dijkstra-bidir took: {}, cost={}, links={}",
                 sw.took(),
                 cost,
                 _seq.len(),
@@ -217,7 +205,7 @@ pub fn run_car() {
             let mut ch = CH::new(&g);
             ch.build();
         }
-        eprintln!("loading ch took: {} ms", sw.took());
+        eprintln!("loading ch took: {}", sw.took());
 
         // dry run
         for _i in 0..5 {
@@ -234,13 +222,108 @@ pub fn run_car() {
             let dst = network.link_key_to_idx(query[1]);
             let (_seq, cost) = ch.search(src, dst).expect("failed to find path with ch");
             eprintln!(
-                "ch took: {} ms, cost={}, links={}",
+                "ch took: {}, cost={}, links={}",
                 sw.took(),
                 cost,
                 _seq.len(),
             );
         }
     }
+}
+
+pub fn run_shp() {
+    let sw = Timer::new();
+    let network = shp::Network::from_path("data/hotosm_kor_roads_lines.shp").unwrap();
+    eprintln!("network loading took: {}", sw.took());
+
+    // 합정
+    let p0 = network.nearest(37.54886, 126.91140, 0.1).unwrap();
+    // 양재
+    let p1 = network.nearest(37.48270, 127.04061, 0.1).unwrap();
+
+    eprintln!(
+        "p0: {:?} {:?}, p1: {:?} {:?}",
+        p0,
+        network.point(p0),
+        p1,
+        network.point(p1),
+    );
+
+    let sw = Timer::new();
+    let g = Graph::from(&network);
+    eprintln!("graph took: {}", sw.took());
+
+    let test_queries = [
+        //
+        [p0, p1],
+    ];
+
+    {
+        for [s, t] in test_queries.iter() {
+            let sw = Timer::new();
+            let src = IdxNodeKey::new(*s as usize);
+            let dst = IdxNodeKey::new(*t as usize);
+            let (_seq, cost) = g
+                .search(src, dst)
+                .expect("failed to find path with dijkstra");
+            eprintln!(
+                "dijkstra took: {}, cost={}, links={}",
+                sw.took(),
+                cost,
+                _seq.len(),
+            );
+
+            let sw = Timer::new();
+            let (_seq, cost) = g
+                .search_bidir(src, dst)
+                .expect("failed to find path with bi-dijkstra");
+            eprintln!(
+                "dijkstra-bidir took: {}, cost={}, links={}",
+                sw.took(),
+                cost,
+                _seq.len(),
+            );
+        }
+    }
+
+    {
+        let sw = Timer::new();
+        let ch = CH::from_file(&g, "./link_ch3").expect("failed to load");
+        if false {
+            let mut ch = CH::new(&g);
+            ch.build();
+        }
+        eprintln!("loading ch took: {}", sw.took());
+
+        // dry run
+        for _i in 0..5 {
+            for [s, t] in test_queries.iter() {
+                let src = IdxNodeKey::new(*s as usize);
+                let dst = IdxNodeKey::new(*t as usize);
+                ch.search(src, dst).expect("failed to find path with ch");
+            }
+        }
+
+        for [s, t] in test_queries.iter() {
+            let sw = Timer::new();
+            let src = IdxNodeKey::new(*s as usize);
+            let dst = IdxNodeKey::new(*t as usize);
+            let (_seq, cost) = ch.search(src, dst).expect("failed to find path with ch");
+            eprintln!(
+                "ch took: {}, cost={}, links={}",
+                sw.took(),
+                cost,
+                _seq.len(),
+            );
+        }
+    }
+
+    /*
+    let mut ch = CH::new(&g);
+    let sw = took::Timer::new();
+    ch.build();
+    eprintln!("ch build took: {}", sw.took());
+    */
 }
 
 const _CHECK_IDXNODEKEY: [u8; 4] = [0; std::mem::size_of::<IdxNodeKey>()];

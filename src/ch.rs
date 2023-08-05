@@ -1,8 +1,8 @@
+use anyhow::Result;
 use ordslice::Ext;
 use rayon::prelude::*;
 
 use super::*;
-use errors::*;
 
 use fnv::*;
 
@@ -461,7 +461,7 @@ impl<'a> CH<'a> {
 
         let heap = BinaryHeap::from(entries);
 
-        eprintln!("building heap took: {} ms", sw.took(),);
+        eprintln!("building heap took: {}", sw.took(),);
         heap
     }
 
@@ -502,7 +502,7 @@ impl<'a> CH<'a> {
             self.add_contraction_dir(from, to, cost, IdxLinkDir::Forward);
             self.add_contraction_dir(to, from, cost, IdxLinkDir::Backward);
         }
-        eprintln!("rebuilding contractions took: {} ms", sw.took(),);
+        eprintln!("rebuilding contractions took: {}", sw.took(),);
     }
 
     pub fn build(&mut self) {
@@ -558,7 +558,7 @@ impl<'a> CH<'a> {
                 }
 
                 eprintln!(
-                    "rebuilding heap, elapsed: {} ms, avg_degrees={:.3}, hop_limit={}",
+                    "rebuilding heap, elapsed: {}, avg_degrees={:.3}, hop_limit={}",
                     sw.took(),
                     avg_degree,
                     hop_limit,

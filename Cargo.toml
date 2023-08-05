@@ -5,17 +5,19 @@ authors = ["Jihyun Yu <j.yu@naverlabs.com>"]
 edition = "2018"
 
 [dependencies]
+anyhow = "*"
 clap = "*"
 csv = "*"
 error-chain = "*"
-failure = "*"
 fnv = "*"
 memmap = "*"
 ordslice = "*"
 osmpbf = "*"
 rayon = "*"
+s2 = "*"
 serde = "*"
 serde_derive = "*"
+shapefile = "*"
 take_mut = "*"
 took = "*"
 
