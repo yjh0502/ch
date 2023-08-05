@@ -112,7 +112,7 @@ where
             }
 
             // check if key is already visited
-            if let Some(mut m) = self.min_costs.get_mut(&entry.key) {
+            if let Some(m) = self.min_costs.get_mut(&entry.key) {
                 if m.visited {
                     continue;
                 }

@@ -25,6 +25,7 @@ impl std::hash::Hash for NodeKey {
 
 #[derive(Deserialize, Debug)]
 pub struct Link {
+    #[allow(unused)]
     mid: u64,
     #[serde(rename = "mesh")]
     mesh_id: u32,
@@ -54,6 +55,7 @@ impl Link {
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Node {
+    #[allow(unused)]
     mid: u64,
     #[serde(rename = "mesh")]
     mesh_id: u32,

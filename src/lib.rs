@@ -1,28 +1,21 @@
-extern crate csv;
 #[macro_use]
 extern crate error_chain;
-extern crate fnv;
-extern crate ordslice;
-extern crate rayon;
-extern crate serde;
-#[macro_use]
-extern crate serde_derive;
-extern crate stopwatch;
 
 use std::cmp::*;
 use std::collections::hash_map::*;
 use std::collections::BinaryHeap;
 use std::ops::Range;
 use std::path::Path;
+use serde_derive::*;
 
-use stopwatch::Stopwatch;
+use took::Timer;
 
 mod ch;
 mod dijkstra;
 mod network;
 pub mod partition;
 
-pub use ch::*;
+pub use crate::ch::*;
 pub use network::*;
 
 pub mod errors {
@@ -96,13 +89,13 @@ pub fn run() {
     // 양재역
     let _key_yangjae_station = walk::NodeKey::new(6732, 19789);
 
-    let sw = Stopwatch::start_new();
+    let sw = Timer::new();
     let network = walk::Network::from_path("wlink").unwrap();
-    eprintln!("network loading took: {} ms", sw.elapsed_ms());
+    eprintln!("network loading took: {} ms", sw.took());
 
-    let sw = Stopwatch::start_new();
+    let sw = Timer::new();
     let g = Graph::from(&network);
-    eprintln!("graph took: {} ms", sw.elapsed_ms());
+    eprintln!("graph took: {} ms", sw.took());
 
     let test_queries = [
         [_key_bangbang, _key_ilsan],
@@ -111,7 +104,7 @@ pub fn run() {
 
     {
         for query in test_queries.iter() {
-            let sw = Stopwatch::start_new();
+            let sw = Timer::new();
             let src = network.node_key_to_idx(query[0]);
             let dst = network.node_key_to_idx(query[1]);
             let (_seq, distance) = g
@@ -119,18 +112,18 @@ pub fn run() {
                 .expect("failed to find path with dijkstra");
             eprintln!(
                 "dijkstra took: {} ms, distance={}, links={}",
-                sw.elapsed_ms(),
+                sw.took(),
                 distance,
                 _seq.len(),
             );
 
-            let sw = Stopwatch::start_new();
+            let sw = Timer::new();
             let (_seq, distance) = g
                 .search_bidir(src, dst)
                 .expect("failed to find path with bi-dijkstra");
             eprintln!(
                 "dijkstra-bidir took: {} ms, distance={}, links={}",
-                sw.elapsed_ms(),
+                sw.took(),
                 distance,
                 _seq.len(),
             );
@@ -138,22 +131,22 @@ pub fn run() {
     }
 
     {
-        let sw = Stopwatch::start_new();
+        let sw = Timer::new();
         let ch = CH::from_file(&g, "./wlink_ch2").expect("failed to load");
         if false {
             let mut ch = CH::new(&g);
             ch.build();
         }
-        eprintln!("loading ch took: {} ms", sw.elapsed_ms());
+        eprintln!("loading ch took: {} ms", sw.took());
 
         for query in test_queries.iter() {
-            let sw = Stopwatch::start_new();
+            let sw = Timer::new();
             let src = network.node_key_to_idx(query[0]);
             let dst = network.node_key_to_idx(query[1]);
             let (_seq, distance) = ch.search(src, dst).expect("failed to find path with ch");
             eprintln!(
                 "ch took: {} ms, distance={}, links={}",
-                sw.elapsed_ms(),
+                sw.took(),
                 distance,
                 _seq.len(),
             );
@@ -173,13 +166,13 @@ pub fn run_car() {
     // 부산
     let _key_busan = road::LinkKey::new(8413, 6942, 2383);
 
-    let sw = Stopwatch::start_new();
+    let sw = Timer::new();
     let network = road::Network::from_path("link").unwrap();
-    eprintln!("network loading took: {} ms", sw.elapsed_ms());
+    eprintln!("network loading took: {} ms", sw.took());
 
-    let sw = Stopwatch::start_new();
+    let sw = Timer::new();
     let g = Graph::from(&network);
-    eprintln!("graph took: {} ms", sw.elapsed_ms());
+    eprintln!("graph took: {} ms", sw.took());
 
     let test_queries = [
         //
@@ -191,7 +184,7 @@ pub fn run_car() {
 
     {
         for query in test_queries.iter() {
-            let sw = Stopwatch::start_new();
+            let sw = Timer::new();
             let src = network.link_key_to_idx(query[0]);
             let dst = network.link_key_to_idx(query[1]);
             let (_seq, cost) = g
@@ -199,18 +192,18 @@ pub fn run_car() {
                 .expect("failed to find path with dijkstra");
             eprintln!(
                 "dijkstra took: {} ms, cost={}, links={}",
-                sw.elapsed_ms(),
+                sw.took(),
                 cost,
                 _seq.len(),
             );
 
-            let sw = Stopwatch::start_new();
+            let sw = Timer::new();
             let (_seq, cost) = g
                 .search_bidir(src, dst)
                 .expect("failed to find path with bi-dijkstra");
             eprintln!(
                 "dijkstra-bidir took: {} ms, cost={}, links={}",
-                sw.elapsed_ms(),
+                sw.took(),
                 cost,
                 _seq.len(),
             );
@@ -218,13 +211,13 @@ pub fn run_car() {
     }
 
     {
-        let sw = Stopwatch::start_new();
+        let sw = Timer::new();
         let ch = CH::from_file(&g, "./link_ch2").expect("failed to load");
         if false {
             let mut ch = CH::new(&g);
             ch.build();
         }
-        eprintln!("loading ch took: {} ms", sw.elapsed_ms());
+        eprintln!("loading ch took: {} ms", sw.took());
 
         // dry run
         for _i in 0..5 {
@@ -236,13 +229,13 @@ pub fn run_car() {
         }
 
         for query in test_queries.iter() {
-            let sw = Stopwatch::start_new();
+            let sw = Timer::new();
             let src = network.link_key_to_idx(query[0]);
             let dst = network.link_key_to_idx(query[1]);
             let (_seq, cost) = ch.search(src, dst).expect("failed to find path with ch");
             eprintln!(
                 "ch took: {} ms, cost={}, links={}",
-                sw.elapsed_ms(),
+                sw.took(),
                 cost,
                 _seq.len(),
             );
@@ -250,33 +243,6 @@ pub fn run_car() {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    /*
-    #[test]
-    fn test_run_walk() {
-        run();
-    }
-
-    #[test]
-    fn test_run_car() {
-        run_car();
-    }
-    */
-}
-
-// static size assertion
-#[allow(unused)]
-fn test_size() {
-    use std::mem::*;
-    unsafe {
-        forget(transmute::<IdxNodeKey, [u8; 4]>(uninitialized()));
-        forget(transmute::<IdxLink, [u8; 8]>(uninitialized()));
-
-        forget(transmute::<dijkstra::HeapEntry<IdxNodeKey>, [u8; 12]>(
-            uninitialized(),
-        ));
-    }
-}
+const _CHECK_IDXNODEKEY: [u8; 4] = [0; std::mem::size_of::<IdxNodeKey>()];
+const _CHECK_IDXLINK: [u8; 8] = [0; std::mem::size_of::<IdxLink>()];
+const _CHECK_HEAPENTRY: [u8; 12] = [0; std::mem::size_of::<dijkstra::HeapEntry<IdxNodeKey>>()];

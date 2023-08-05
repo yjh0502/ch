@@ -447,7 +447,7 @@ impl<'a> CH<'a> {
     }
 
     fn build_heap(&self, deleted_count: &[u16], hop_limit: u16) -> BinaryHeap<CHEntry> {
-        let sw = Stopwatch::start_new();
+        let sw = Timer::new();
         let len = self.graph.node_len;
 
         let entries = (0..len)
@@ -461,14 +461,14 @@ impl<'a> CH<'a> {
 
         let heap = BinaryHeap::from(entries);
 
-        eprintln!("building heap took: {} ms", sw.elapsed_ms(),);
+        eprintln!("building heap took: {} ms", sw.took(),);
         heap
     }
 
     // `rebuild_contractions` removes all redundent edges on graph. An edge is redundent if there
     // is no shortest path which passes given edge.
     fn rebuild_contractions(&mut self, hop_limit: u16) {
-        let sw = Stopwatch::start_new();
+        let sw = Timer::new();
         let len = self.graph.node_len;
 
         let entries = (0..len)
@@ -502,7 +502,7 @@ impl<'a> CH<'a> {
             self.add_contraction_dir(from, to, cost, IdxLinkDir::Forward);
             self.add_contraction_dir(to, from, cost, IdxLinkDir::Backward);
         }
-        eprintln!("rebuilding contractions took: {} ms", sw.elapsed_ms(),);
+        eprintln!("rebuilding contractions took: {} ms", sw.took(),);
     }
 
     pub fn build(&mut self) {
@@ -528,7 +528,7 @@ impl<'a> CH<'a> {
         const HEAP_MIN_INTERVAL: usize = STEP * 2;
         let mut rebuild_try_count = std::cmp::max(HEAP_MIN_INTERVAL, heap.len() / 10);
 
-        let sw = Stopwatch::start_new();
+        let sw = Timer::new();
         let mut stat_score = Stat::default();
         let mut stat_diff = Stat::default();
         let mut stat_neighbors = Stat::default();
@@ -559,7 +559,7 @@ impl<'a> CH<'a> {
 
                 eprintln!(
                     "rebuilding heap, elapsed: {} ms, avg_degrees={:.3}, hop_limit={}",
-                    sw.elapsed_ms(),
+                    sw.took(),
                     avg_degree,
                     hop_limit,
                 );
@@ -675,7 +675,7 @@ impl<'a> CH<'a> {
                         }
                     }
                 };
-            };
+            }
 
             step!(search_f, search_b, IdxLinkDir::Forward);
             step!(search_b, search_f, IdxLinkDir::Backward);
@@ -735,12 +735,5 @@ impl<'a> CH<'a> {
     }
 }
 
-// static size assertion
-#[allow(unused)]
-fn test_size() {
-    use std::mem::*;
-    unsafe {
-        forget(transmute::<CHEntry, [u8; 8]>(uninitialized()));
-        forget(transmute::<CHContraction, [u8; 16]>(uninitialized()));
-    }
-}
+const _CHECK_CHENTRY: [u8; 8] = [0; std::mem::size_of::<CHEntry>()];
+const _CHECK_CHCONTRACTION: [u8; 16] = [0; std::mem::size_of::<CHContraction>()];

@@ -1,9 +1,4 @@
-extern crate ch;
-extern crate clap;
-extern crate stopwatch;
-
 use clap::{Command, Arg};
-use stopwatch::Stopwatch;
 
 use ch::*;
 
@@ -30,9 +25,9 @@ fn main() {
     let graph = Graph::from(&network);
 
     let mut ch = CH::new(&graph);
-    let sw = Stopwatch::start_new();
+    let sw = took::Timer::new();
     ch.build();
-    eprintln!("ch build took: {} ms", sw.elapsed_ms());
+    eprintln!("ch build took: {} ms", sw.took());
 
     ch.write(out_path).expect("failed to write");
 }

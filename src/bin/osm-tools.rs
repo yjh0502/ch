@@ -1,11 +1,3 @@
-extern crate clap;
-extern crate failure;
-extern crate fnv;
-extern crate memmap;
-extern crate osmpbf;
-extern crate rayon;
-extern crate stopwatch;
-
 use std::fs::File;
 
 use clap::{Command, Arg};
@@ -108,8 +100,6 @@ fn seq_mmap(filename: &str) -> Result<()> {
     }
 
     blobs.par_iter().enumerate().for_each(|(i, blob)| {
-        let sw = stopwatch::Stopwatch::start_new();
-
         if let BlobDecode::OsmData(data) = blob.decode().unwrap() {
             let stats = data_to_stats(&data);
             eprintln!("{}/{:?}", i, stats);

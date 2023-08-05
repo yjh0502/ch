@@ -2,21 +2,22 @@
 name = "ch"
 version = "0.1.0"
 authors = ["Jihyun Yu <j.yu@naverlabs.com>"]
+edition = "2018"
 
 [dependencies]
+clap = "*"
 csv = "*"
+error-chain = "*"
+failure = "*"
+fnv = "*"
+memmap = "*"
+ordslice = "*"
+osmpbf = "*"
+rayon = "*"
 serde = "*"
 serde_derive = "*"
-error-chain = "*"
-ordslice = "*"
-stopwatch = "*"
-rayon = "*"
 take_mut = "*"
-fnv = "*"
-clap = "*"
-osmpbf = "*"
-memmap = "*"
-failure = "*"
+took = "*"
 
 [profile.test]
 debug = true

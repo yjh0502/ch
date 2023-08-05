@@ -122,6 +122,7 @@ impl Link {
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Node {
+    #[allow(unused)]
     mid: u64,
     #[serde(rename = "mesh")]
     mesh_id: u32,
