@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["Jihyun Yu <j.yu@naverlabs.com>"]
 
 [dependencies]
-csv = "1"
+csv = "*"
 serde = "*"
 serde_derive = "*"
 error-chain = "*"
@@ -14,6 +14,9 @@ rayon = "*"
 take_mut = "*"
 fnv = "*"
 clap = "*"
+osmpbf = "*"
+memmap = "*"
+failure = "*"
 
 [profile.test]
 debug = true

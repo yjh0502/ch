@@ -1,2 +1,4 @@
 target
 *.sw[a-z]
+perf.*
+data
