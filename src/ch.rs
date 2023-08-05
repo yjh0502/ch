@@ -162,7 +162,8 @@ impl<'a> CH<'a> {
     ) {
         let v = &mut self.contractions[snode_idx.index()];
         let mut found = false;
-        if let Some(prev_link) = v.iter_mut()
+        if let Some(prev_link) = v
+            .iter_mut()
             .find(|l| l.enode_idx == enode_idx && l.dir() == dir)
         {
             if prev_link.cost() > length {

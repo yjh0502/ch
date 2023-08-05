@@ -10,8 +10,8 @@ extern crate serde_derive;
 extern crate stopwatch;
 
 use std::cmp::*;
-use std::collections::BinaryHeap;
 use std::collections::hash_map::*;
+use std::collections::BinaryHeap;
 use std::ops::Range;
 use std::path::Path;
 
@@ -58,7 +58,9 @@ where
     P: AsRef<Path>,
 {
     let mut v = Vec::new();
-    let mut rdr = csv::ReaderBuilder::new().from_path(p).map_err(Error::from)?;
+    let mut rdr = csv::ReaderBuilder::new()
+        .from_path(p)
+        .map_err(Error::from)?;
     for result in rdr.deserialize() {
         let item: T = result.map_err(Error::from)?;
         v.push(item);
@@ -71,7 +73,9 @@ where
     T: serde::Serialize + Send + 'static,
     P: AsRef<Path>,
 {
-    let mut writer = csv::WriterBuilder::new().from_path(p).map_err(Error::from)?;
+    let mut writer = csv::WriterBuilder::new()
+        .from_path(p)
+        .map_err(Error::from)?;
 
     for v in data.iter() {
         writer.serialize(v)?;
@@ -110,7 +114,8 @@ pub fn run() {
             let sw = Stopwatch::start_new();
             let src = network.node_key_to_idx(query[0]);
             let dst = network.node_key_to_idx(query[1]);
-            let (_seq, distance) = g.search(src, dst)
+            let (_seq, distance) = g
+                .search(src, dst)
                 .expect("failed to find path with dijkstra");
             eprintln!(
                 "dijkstra took: {} ms, distance={}, links={}",
@@ -120,7 +125,8 @@ pub fn run() {
             );
 
             let sw = Stopwatch::start_new();
-            let (_seq, distance) = g.search_bidir(src, dst)
+            let (_seq, distance) = g
+                .search_bidir(src, dst)
                 .expect("failed to find path with bi-dijkstra");
             eprintln!(
                 "dijkstra-bidir took: {} ms, distance={}, links={}",
@@ -188,7 +194,8 @@ pub fn run_car() {
             let sw = Stopwatch::start_new();
             let src = network.link_key_to_idx(query[0]);
             let dst = network.link_key_to_idx(query[1]);
-            let (_seq, cost) = g.search(src, dst)
+            let (_seq, cost) = g
+                .search(src, dst)
                 .expect("failed to find path with dijkstra");
             eprintln!(
                 "dijkstra took: {} ms, cost={}, links={}",
@@ -198,7 +205,8 @@ pub fn run_car() {
             );
 
             let sw = Stopwatch::start_new();
-            let (_seq, cost) = g.search_bidir(src, dst)
+            let (_seq, cost) = g
+                .search_bidir(src, dst)
                 .expect("failed to find path with bi-dijkstra");
             eprintln!(
                 "dijkstra-bidir took: {} ms, cost={}, links={}",

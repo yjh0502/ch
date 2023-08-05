@@ -1,7 +1,7 @@
 use std;
 use std::cmp::*;
-use std::collections::BinaryHeap;
 use std::collections::hash_map::*;
+use std::collections::BinaryHeap;
 use std::hash::Hash;
 
 use fnv;

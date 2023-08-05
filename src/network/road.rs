@@ -252,7 +252,8 @@ impl Network {
         let mut nodes = self.mesh_next_links(src, link_id);
 
         // find nodes on other meshes
-        let mesh_node = self.edge_nodes
+        let mesh_node = self
+            .edge_nodes
             .as_slice()
             .binary_search_by_key(&src, Node::node_key);
         if let Ok(idx) = mesh_node {

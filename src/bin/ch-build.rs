@@ -2,8 +2,8 @@ extern crate ch;
 extern crate clap;
 extern crate stopwatch;
 
-use stopwatch::Stopwatch;
 use clap::{App, Arg};
+use stopwatch::Stopwatch;
 
 use ch::*;
 
