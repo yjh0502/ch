@@ -2,4 +2,5 @@ target
 *.sw[a-z]
 perf.*
 data
+out
 link_ch*

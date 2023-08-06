@@ -1,3 +1,3 @@
-fn main() {
-    ch::run_shp();
+fn main() -> anyhow::Result<()> {
+    ch::run_shp()
 }

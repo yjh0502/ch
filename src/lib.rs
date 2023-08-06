@@ -95,25 +95,25 @@ pub fn run() {
             let sw = Timer::new();
             let src = network.node_key_to_idx(query[0]);
             let dst = network.node_key_to_idx(query[1]);
-            let (_seq, distance) = g
+            let (seq, distance) = g
                 .search(src, dst)
                 .expect("failed to find path with dijkstra");
             eprintln!(
                 "dijkstra took: {}, distance={}, links={}",
                 sw.took(),
                 distance,
-                _seq.len(),
+                seq.len(),
             );
 
             let sw = Timer::new();
-            let (_seq, distance) = g
+            let (seq, distance) = g
                 .search_bidir(src, dst)
                 .expect("failed to find path with bi-dijkstra");
             eprintln!(
                 "dijkstra-bidir took: {}, distance={}, links={}",
                 sw.took(),
                 distance,
-                _seq.len(),
+                seq.len(),
             );
         }
     }
@@ -131,12 +131,12 @@ pub fn run() {
             let sw = Timer::new();
             let src = network.node_key_to_idx(query[0]);
             let dst = network.node_key_to_idx(query[1]);
-            let (_seq, distance) = ch.search(src, dst).expect("failed to find path with ch");
+            let (seq, distance) = ch.search(src, dst).expect("failed to find path with ch");
             eprintln!(
                 "ch took: {}, distance={}, links={}",
                 sw.took(),
                 distance,
-                _seq.len(),
+                seq.len(),
             );
         }
     }
@@ -175,25 +175,25 @@ pub fn run_car() {
             let sw = Timer::new();
             let src = network.link_key_to_idx(query[0]);
             let dst = network.link_key_to_idx(query[1]);
-            let (_seq, cost) = g
+            let (seq, cost) = g
                 .search(src, dst)
                 .expect("failed to find path with dijkstra");
             eprintln!(
                 "dijkstra took: {}, cost={}, links={}",
                 sw.took(),
                 cost,
-                _seq.len(),
+                seq.len(),
             );
 
             let sw = Timer::new();
-            let (_seq, cost) = g
+            let (seq, cost) = g
                 .search_bidir(src, dst)
                 .expect("failed to find path with bi-dijkstra");
             eprintln!(
                 "dijkstra-bidir took: {}, cost={}, links={}",
                 sw.took(),
                 cost,
-                _seq.len(),
+                seq.len(),
             );
         }
     }
@@ -220,18 +220,13 @@ pub fn run_car() {
             let sw = Timer::new();
             let src = network.link_key_to_idx(query[0]);
             let dst = network.link_key_to_idx(query[1]);
-            let (_seq, cost) = ch.search(src, dst).expect("failed to find path with ch");
-            eprintln!(
-                "ch took: {}, cost={}, links={}",
-                sw.took(),
-                cost,
-                _seq.len(),
-            );
+            let (seq, cost) = ch.search(src, dst).expect("failed to find path with ch");
+            eprintln!("ch took: {}, cost={}, links={}", sw.took(), cost, seq.len(),);
         }
     }
 }
 
-pub fn run_shp() {
+pub fn run_shp() -> Result<()> {
     let sw = Timer::new();
     let network = shp::Network::from_path("data/hotosm_kor_roads_lines.shp").unwrap();
     eprintln!("network loading took: {}", sw.took());
@@ -259,30 +254,32 @@ pub fn run_shp() {
     ];
 
     {
-        for [s, t] in test_queries.iter() {
+        for (i, [s, t]) in test_queries.iter().enumerate() {
             let sw = Timer::new();
             let src = IdxNodeKey::new(*s as usize);
             let dst = IdxNodeKey::new(*t as usize);
-            let (_seq, cost) = g
+            let (seq, cost) = g
                 .search(src, dst)
                 .expect("failed to find path with dijkstra");
             eprintln!(
                 "dijkstra took: {}, cost={}, links={}",
                 sw.took(),
                 cost,
-                _seq.len(),
+                seq.len(),
             );
+            shp_path_dump(&network, &seq, &format!("out/shp_dijkstra_{}.json", i))?;
 
             let sw = Timer::new();
-            let (_seq, cost) = g
+            let (seq, cost) = g
                 .search_bidir(src, dst)
                 .expect("failed to find path with bi-dijkstra");
             eprintln!(
                 "dijkstra-bidir took: {}, cost={}, links={}",
                 sw.took(),
                 cost,
-                _seq.len(),
+                seq.len(),
             );
+            shp_path_dump(&network, &seq, &format!("out/shp_dijkstrabi_{}.json", i))?;
         }
     }
 
@@ -304,26 +301,48 @@ pub fn run_shp() {
             }
         }
 
-        for [s, t] in test_queries.iter() {
+        for (i, [s, t]) in test_queries.iter().enumerate() {
             let sw = Timer::new();
             let src = IdxNodeKey::new(*s as usize);
             let dst = IdxNodeKey::new(*t as usize);
-            let (_seq, cost) = ch.search(src, dst).expect("failed to find path with ch");
-            eprintln!(
-                "ch took: {}, cost={}, links={}",
-                sw.took(),
-                cost,
-                _seq.len(),
-            );
+            let (seq, cost) = ch.search(src, dst).expect("failed to find path with ch");
+            eprintln!("ch took: {}, cost={}, links={}", sw.took(), cost, seq.len(),);
+
+            shp_path_dump(&network, &seq, &format!("out/shp_ch_{}.json", i))?;
         }
     }
 
-    /*
-    let mut ch = CH::new(&g);
-    let sw = took::Timer::new();
-    ch.build();
-    eprintln!("ch build took: {}", sw.took());
-    */
+    Ok(())
+}
+
+fn shp_path_dump(network: &shp::Network, seq: &[IdxNodeKey], out: &str) -> Result<()> {
+    let line = seq
+        .iter()
+        .map(|node| {
+            let p = network.point(node.index() as u32);
+            let ll = s2::latlng::LatLng::from(p);
+            vec![ll.lng.deg(), ll.lat.deg()]
+        })
+        .collect::<Vec<_>>();
+
+    std::fs::write(out, to_geojson(line))?;
+    Ok(())
+}
+
+fn to_geojson(points: Vec<Vec<f64>>) -> String {
+    use geojson::*;
+
+    let geometry = Geometry::new(Value::LineString(points));
+
+    let geojson = GeoJson::Feature(Feature {
+        bbox: None,
+        geometry: Some(geometry),
+        id: None,
+        properties: None,
+        foreign_members: None,
+    });
+
+    geojson.to_string()
 }
 
 const _CHECK_IDXNODEKEY: [u8; 4] = [0; std::mem::size_of::<IdxNodeKey>()];
