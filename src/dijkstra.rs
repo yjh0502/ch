@@ -124,15 +124,15 @@ where
     }
 
     #[inline]
-    pub fn update(&mut self, entry: &HeapEntry<K>, next_key: K, next_cost: u32) {
+    pub fn update(&mut self, entry: &HeapEntry<K>, next_key: K, next_cost: u32) -> bool {
         if self.heap_limit <= self.added_count {
-            return;
+            return false;
         }
         if self.hop_limit <= entry.hop {
-            return;
+            return false;
         }
         if self.cost_limit <= next_cost {
-            return;
+            return false;
         }
 
         let key = entry.key;
@@ -145,7 +145,7 @@ where
             Entry::Occupied(mut o) => {
                 let m = o.get_mut();
                 if m.visited || m.cost <= next_cost {
-                    return;
+                    return false;
                 }
                 *m = cost_item;
             }
@@ -160,6 +160,7 @@ where
             hop: entry.hop + 1,
             cost: next_cost,
         });
+        true
     }
 
     #[allow(unused)]

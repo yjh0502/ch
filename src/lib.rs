@@ -297,7 +297,9 @@ pub fn run_shp() -> Result<()> {
             for [s, t] in test_queries.iter() {
                 let src = IdxNodeKey::new(*s as usize);
                 let dst = IdxNodeKey::new(*t as usize);
-                ch.search(src, dst).expect("failed to find path with ch");
+                if ch.search(src, dst).is_none() {
+                    eprintln!("failed to find path with ch: s={}, t={}", s, t);
+                }
             }
         }
 
@@ -305,10 +307,10 @@ pub fn run_shp() -> Result<()> {
             let sw = Timer::new();
             let src = IdxNodeKey::new(*s as usize);
             let dst = IdxNodeKey::new(*t as usize);
-            let (seq, cost) = ch.search(src, dst).expect("failed to find path with ch");
-            eprintln!("ch took: {}, cost={}, links={}", sw.took(), cost, seq.len(),);
-
-            shp_path_dump(&network, &seq, &format!("out/shp_ch_{}.json", i))?;
+            if let Some((seq, cost)) = ch.search(src, dst) {
+                eprintln!("ch took: {}, cost={}, links={}", sw.took(), cost, seq.len(),);
+                shp_path_dump(&network, &seq, &format!("out/shp_ch_{}.json", i))?;
+            }
         }
     }
 

@@ -108,9 +108,8 @@ impl<'a> CH<'a> {
         let mut contractions = Vec::with_capacity(node_len);
         contractions.resize(node_len, Vec::new());
 
-        let link_partitions =
-            partition::partition_range_by_key(all_contractions.as_slice(), |c| c.snode_idx);
-        for (k, r) in link_partitions.into_iter() {
+        let link_partitions = partition::partition_range_by_key(&all_contractions, |c| c.snode_idx);
+        for (k, r) in link_partitions {
             let mut v = all_contractions[r]
                 .iter()
                 .map(|c| IdxLink::new(c.enode_idx, c.length, IdxLinkDir::Forward))
@@ -123,8 +122,8 @@ impl<'a> CH<'a> {
 
         let contractions_rev = map_rev(contractions.as_slice());
 
-        let mut contractions = filter_order(contractions, order.as_slice());
-        let mut contractions_rev = filter_order(contractions_rev, order.as_slice());
+        let mut contractions = filter_order(contractions, &order);
+        let mut contractions_rev = filter_order(contractions_rev, &order);
 
         for (i, v) in contractions.iter_mut().enumerate() {
             v.append(&mut contractions_rev[i]);

@@ -142,7 +142,7 @@ impl Graph {
         if let Some(entry) = search.next() {
             let key = entry.key;
 
-            for idx_link in self.idx_links[key.0 as usize].iter() {
+            for idx_link in self.idx_links[key.index()].iter() {
                 if idx_link.dir() != dir {
                     continue;
                 }
