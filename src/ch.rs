@@ -711,19 +711,21 @@ impl<'a> CH<'a> {
             let key2 = *path.last().unwrap();
 
             // find contracted edge
-            let lower_bound = all_contractions.lower_bound_by_key(&key1, |c| c.snode_idx);
-            let upper_bound = all_contractions.upper_bound_by_key(&key1, |c| c.snode_idx);
+            let r = all_contractions.equal_range_by_key(&key1, |c| c.snode_idx);
 
-            let mut found = false;
-            for c in &all_contractions[lower_bound..upper_bound] {
-                if c.enode_idx == key2 {
-                    path.push(c.mnode_idx);
-                    path.push(key1);
-                    found = true;
+            let mut found = None;
+            let mut minlen = std::u32::MAX;
+            for c in &all_contractions[r] {
+                if c.enode_idx == key2 && c.length < minlen {
+                    found = Some(c);
+                    minlen = c.length;
                 }
             }
 
-            if !found {
+            if let Some(c) = found {
+                path.push(c.mnode_idx);
+                path.push(key1);
+            } else {
                 decoded.push(key1);
             }
         }
