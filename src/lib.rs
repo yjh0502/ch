@@ -232,17 +232,12 @@ pub fn run_shp() -> Result<()> {
     eprintln!("network loading took: {}", sw.took());
 
     // 합정
-    let p0 = network.nearest(37.54886, 126.91140, 0.1).unwrap();
+    let dist = 0.02f64;
+    let p0 = network.nearest(37.54886, 126.91140, dist).unwrap();
     // 양재
-    let p1 = network.nearest(37.48270, 127.04061, 0.1).unwrap();
+    let p1 = network.nearest(37.48270, 127.04061, dist).unwrap();
 
-    eprintln!(
-        "p0: {:?} {:?}, p1: {:?} {:?}",
-        p0,
-        network.point(p0),
-        p1,
-        network.point(p1),
-    );
+    eprintln!("p0: {:?}, p1: {:?}", p0, p1,);
 
     let sw = Timer::new();
     let g = Graph::from(&network);
@@ -251,6 +246,7 @@ pub fn run_shp() -> Result<()> {
     let test_queries = [
         //
         [p0, p1],
+        [p1, p0],
     ];
 
     {

@@ -40,6 +40,12 @@ impl IdxLinkDir {
             _ => panic!("invalid val for IdxLinkDir: {}", val),
         }
     }
+    fn rev(&self) -> Self {
+        match self {
+            IdxLinkDir::Forward => IdxLinkDir::Backward,
+            IdxLinkDir::Backward => IdxLinkDir::Forward,
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -93,8 +99,8 @@ pub fn map_rev(list: &[Vec<IdxLink>]) -> Vec<Vec<IdxLink>> {
     rev.resize(len, Vec::new());
     for (from_idx, links) in list.iter().enumerate() {
         let snode_idx = IdxNodeKey::new(from_idx);
-        for link in links.iter() {
-            let link_rev = IdxLink::new(snode_idx, link.cost(), IdxLinkDir::Backward);
+        for link in links {
+            let link_rev = IdxLink::new(snode_idx, link.cost(), link.dir().rev());
             rev[link.enode_idx.index()].push(link_rev);
         }
     }

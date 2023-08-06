@@ -203,19 +203,6 @@ impl<'a> CH<'a> {
         }
     }
 
-    fn nearby_nodes(&self, key: IdxNodeKey, dir: IdxLinkDir) -> Vec<IdxLink> {
-        let idx = key.index();
-        let raw_links = &self.contractions[idx];
-        let mut links: Vec<IdxLink> = Vec::with_capacity(raw_links.len());
-        for link in raw_links.iter() {
-            if link.dir() != dir {
-                continue;
-            }
-            links.push(*link);
-        }
-        links
-    }
-
     /// simple 1-N dijkstra impl.
     #[allow(unused)]
     fn dijkstra_contract_dist_backward1(
@@ -266,7 +253,6 @@ impl<'a> CH<'a> {
                 }
             }
 
-            // same with nearby_nodes, but inline to remove allocation
             for link in &self.contractions[key.index()] {
                 if link.dir() != IdxLinkDir::Forward {
                     break;
@@ -352,7 +338,6 @@ impl<'a> CH<'a> {
                     }
                 }
 
-                // same with nearby_nodes, but inline to remove allocation
                 for link in &self.contractions[key.index()] {
                     if link.dir() != IdxLinkDir::Forward {
                         break;
@@ -631,18 +616,82 @@ impl<'a> CH<'a> {
     ) -> Option<dijkstra::HeapEntry<IdxNodeKey>> {
         if let Some(entry) = search.next() {
             let key = entry.key;
-            let nodes = self.nearby_nodes(key, dir);
-            for link in nodes.iter() {
+            for link in &self.contractions[key.index()] {
+                if link.dir() != dir {
+                    continue;
+                }
                 let next_key = link.enode_idx;
                 let next_cost = entry.cost + link.cost();
                 search.update(&entry, next_key, next_cost);
             }
             return Some(entry);
         }
-        return None;
+        None
+    }
+
+    fn decode_contraction(&self, mut path: Vec<IdxNodeKey>, dir: IdxLinkDir) -> Vec<IdxNodeKey> {
+        let all_contractions = self.all_contractions.as_slice();
+
+        let mut decoded = Vec::new();
+        // use path as a stack
+        while !path.is_empty() {
+            if path.len() == 1 {
+                decoded.push(path.pop().unwrap());
+                break;
+            }
+
+            let key1 = path.pop().unwrap();
+            let key2 = *path.last().unwrap();
+
+            let mut found = None;
+            let mut minlen = std::u32::MAX;
+
+            // find contracted edge
+            match dir {
+                IdxLinkDir::Forward => {
+                    let r = all_contractions.equal_range_by_key(&key2, |c| c.snode_idx);
+                    for c in &all_contractions[r] {
+                        if c.enode_idx == key1 && c.length < minlen {
+                            found = Some(c);
+                            minlen = c.length;
+                        }
+                    }
+                }
+                IdxLinkDir::Backward => {
+                    let r = all_contractions.equal_range_by_key(&key1, |c| c.snode_idx);
+                    for c in &all_contractions[r] {
+                        if c.enode_idx == key2 && c.length < minlen {
+                            found = Some(c);
+                            minlen = c.length;
+                        }
+                    }
+                }
+            }
+
+            if let Some(c) = found {
+                path.push(c.mnode_idx);
+                path.push(key1);
+            } else {
+                decoded.push(key1);
+            }
+        }
+        decoded.reverse();
+        decoded
     }
 
     pub fn search(&self, src: IdxNodeKey, dst: IdxNodeKey) -> Option<(Vec<IdxNodeKey>, u32)> {
+        /*
+        let c0 = self.contractions[src.index()]
+            .iter()
+            .filter(|l| l.dir() == IdxLinkDir::Forward)
+            .collect::<Vec<_>>();
+        let c1 = self.contractions[dst.index()]
+            .iter()
+            .filter(|l| l.dir() == IdxLinkDir::Backward)
+            .collect::<Vec<_>>();
+        eprintln!("c0={:?}, c1={:?}", c0, c1);
+        */
+
         let mut search_f = dijkstra::Search::new();
         search_f.add_src(src);
 
@@ -684,53 +733,25 @@ impl<'a> CH<'a> {
             }
         }
         if min_cost == std::u32::MAX {
-            eprintln!("f={}, b={}", search_f.visited_len(), search_b.visited_len());
             return None;
         }
 
-        let all_contractions = self.all_contractions.as_slice();
-        let mut path = {
-            let mut path_f = search_f.decode(min_key);
-            let mut path_b = search_b.decode(min_key);
-            path_b.reverse();
-            path_f.pop();
-            path_f.append(&mut path_b);
-            path_f
+        let decoded = {
+            let path_f = search_f.decode(min_key);
+            let path_b = search_b.decode(min_key);
+
+            assert_eq!(path_f.last(), path_b.last());
+
+            let mut d_f = self.decode_contraction(path_f, IdxLinkDir::Forward);
+            let mut d_b = self.decode_contraction(path_b, IdxLinkDir::Backward);
+
+            assert_eq!(d_f.last(), d_b.last());
+
+            d_b.reverse();
+            d_f.pop();
+            d_f.append(&mut d_b);
+            d_f
         };
-
-        let mut decoded = Vec::new();
-        // use path as a stack
-        while !path.is_empty() {
-            if path.len() == 1 {
-                decoded.push(path.pop().unwrap());
-                break;
-            }
-
-            let key1 = path.pop().unwrap();
-            let key2 = *path.last().unwrap();
-
-            // find contracted edge
-            let r = all_contractions.equal_range_by_key(&key1, |c| c.snode_idx);
-
-            let mut found = None;
-            let mut minlen = std::u32::MAX;
-            for c in &all_contractions[r] {
-                if c.enode_idx == key2 && c.length < minlen {
-                    found = Some(c);
-                    minlen = c.length;
-                }
-            }
-
-            if let Some(c) = found {
-                path.push(c.mnode_idx);
-                path.push(key1);
-            } else {
-                decoded.push(key1);
-            }
-        }
-        decoded.reverse();
-
-        eprintln!("f={}, b={}", search_f.visited_len(), search_b.visited_len(),);
 
         Some((decoded, min_cost))
     }

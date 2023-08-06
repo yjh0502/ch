@@ -37,7 +37,7 @@ impl Network {
     where
         P: AsRef<Path>,
     {
-        let mut reader = shapefile::ShapeReader::from_path(p)?;
+        let mut reader = shapefile::Reader::from_path(p)?;
 
         let mut total_dist = 0usize;
         let mut record_count = 0;
@@ -46,9 +46,20 @@ impl Network {
         // collect points
         let mut points = HashSet::new();
         let mut edges = Vec::new();
-        for result in reader.iter_shapes() {
-            let shape = result?;
+        for result in reader.iter_shapes_and_records() {
+            let (shape, _records) = result?;
             record_count += 1;
+
+            let oneway = _records
+                .get("oneway")
+                .map(|v| {
+                    if let dbase::FieldValue::Character(Some(c)) = v {
+                        c == "yes"
+                    } else {
+                        false
+                    }
+                })
+                .unwrap_or(false);
 
             let pl = match shape {
                 shapefile::Shape::Polyline(pl) => pl,
@@ -71,7 +82,13 @@ impl Network {
                         let len = angle_to_km(last_ll.distance(&ll)) * 1000.0 * 100.0;
                         let len = len as u32;
                         total_dist += len as usize;
-                        edges.push((last, cell, len));
+
+                        if oneway {
+                            edges.push((last, cell, len));
+                        } else {
+                            edges.push((last, cell, len));
+                            edges.push((cell, last, len));
+                        }
                     }
                     last = Some((cell, ll));
                 }
@@ -87,11 +104,11 @@ impl Network {
 
         let mut edges = edges
             .into_par_iter()
-            .flat_map(|(s, t, len)| {
+            .map(|(s, t, len)| {
                 let s = points.binary_search(&s).unwrap() as u32;
                 let t = points.binary_search(&t).unwrap() as u32;
 
-                [Edge { s, t, len }, Edge { s: t, t: s, len }]
+                Edge { s, t, len }
             })
             .collect::<Vec<_>>();
 
